@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three框架-透视</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/dat.gui.min.js"></script>
+    <script src="/examples/js/loaders/VTKLoader.js"></script>
+    <style type="text/css">
+        div#canvas-frame {
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            height: 600px;
+            background-color: #EEEEEE;
+        }
+
+    </style>
+    <script>
+        var renderer,texture;
+        function initThree() {
+            width = document.getElementById('canvas-frame').clientWidth;
+            height = document.getElementById('canvas-frame').clientHeight;
+            renderer = new THREE.WebGLRenderer({
+                antialias : true
+            });
+            renderer.setSize(width, height);
+            document.getElementById('canvas-frame').appendChild(renderer.domElement);
+            //renderer.setClearColor(0xFFFFFF, 1.0);
+        }
+
+        var camera;
+        function initCamera() {
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 1e10);
+            //camera.position.x=100;
+            camera.position.z=0.4;
+
+        }
+
+        var scene;
+        function initScene() {
+            scene = new THREE.Scene();
+        }
+
+        var light;
+        function initLight() {
+            light = new THREE.DirectionalLight(0xffffff);//环境光
+            light.position.set(100, 100, 200);
+            scene.add(light);
+
+            // light = new THREE.PointLight(0xFFFF00);//点光源
+            // light.position.set(0, 0,300);
+            // scene.add(light);
+        }
+
+        var mesh,geometry;
+        function initObject() {
+             geometry = new THREE.VTKLoader( );
+            var material = new THREE.MeshLambertMaterial( { color:0xffffff,side:THREE.DoubleSide} );
+            var loader = new THREE.VTKLoader();
+            loader.load(
+                // resource URL
+                '/examples/models/vtk/bunny.vtk',function (geometry) {
+                    geometry.computeVertexNormals();
+                   mesh = new THREE.Mesh( geometry,material);
+                    //  mesh.position = new THREE.Vector3(0,0,0);
+                    mesh.position.setY(-0.1)
+                    scene.add(mesh);
+                }
+        );
+
+        }
+        var para;
+        function createUI() {
+            var parameter = function () {
+                this.repeat=1;
+                this.wrap=1;
+                this.offsetX=0;
+                this.offsetY=0;
+            }
+            para=new parameter();
+            var gui=new dat.GUI();
+            gui.add(para,'repeat',1,5).name('纹理重复');
+            gui.add(para,'wrap',1000,1002).name('纹理回环').step(1);
+            gui.add(para,'offsetX',-1.0,1.0).name('纹理x偏移').step(0.01);
+            gui.add(para,'offsetY',-1.0,1.0).name('纹理y偏移').step(0.1);
+
+        }
+        function threeStart() {
+            initThree();
+            initCamera();
+            initScene();
+            initLight();
+            initObject();
+            animation();
+           // createUI();
+        }
+        function animation()
+        {
+           // change();
+            if(mesh){
+                mesh.rotateY(0.01)
+            }
+
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animation);
+        }
+        function change() {
+            if(texture !=null){
+                texture.repeat.x = texture.repeat.y=para.repeat;
+                texture.offset.x +=para.offsetX;
+                texture.wrapS=texture.wrapT=para.wrap;
+                texture.needsUpdate=true
+
+            }
+        }
+
+
+    </script>
+</head>
+
+<body onload="threeStart();">
+<div id="canvas-frame"></div>
+
+</body>
+</html>
