@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three框架-透视</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/build/tween.umd.js"></script>
+<!--    <script src="/examples/js/loaders/MTLLoader.js"></script>-->
+    <style type="text/css">
+        div#canvas-frame {
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            height: 600px;
+            background-color: #EEEEEE;
+        }
+
+    </style>
+</head>
+
+<body onload="threeStart();">
+<div id="canvas-frame"></div>
+
+</body>
+<script>
+    var renderer,texture;
+function initThree(){
+    width=document.getElementById('canvas-frame').clientWidth;
+    height=document.getElementById('canvas-frame').clientHeight;
+    renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setClearColor(0xffffff);
+    renderer.setSize(width,height);
+    document.getElementById('canvas-frame').appendChild(renderer.domElement);
+}
+var camera;
+function initCamera(){
+    camera=new THREE.PerspectiveCamera(45,width/height,1,10000);
+    camera.position.x=100;
+    camera.position.y=300;
+    camera.position.z=600;
+    camera.up.x=0;
+    camera.up.y=1;
+    camera.up.z=0;
+    camera.lookAt(0,0,0);
+
+}
+var scene;
+function initScene() {
+    scene=new THREE.Scene();
+}
+var light;
+function initLight(){
+    light=new THREE.DirectionalLight({color:0xffffff});
+    light.position.set(0,0,0);
+    scene.add(light);
+}
+var mesh;
+function initObject(){
+    var geomety=new THREE.BoxGeometry(100,100,100);
+    for(var i=0;i<geomety.faces.length;i+=2){
+        var hex=Math.random() * 0xffffff;
+        geomety.faces[i].color.setHex(hex)
+        geomety.faces[i+1].color.setHex(hex)
+    }
+    var material=new THREE.MeshBasicMaterial({vertexColors:THREE.FaceColors});
+    mesh=new THREE.Mesh(geomety,material);
+    mesh.position=new THREE.Vector3(0,0,0);
+    scene.add(mesh);
+}
+function initGrid() {
+    var helper = new THREE.GridHelper( 1000, 50,0x0000ff, 0x808080  );
+   // helper.setColors( 0x0000ff, 0x808080 );
+    scene.add( helper );
+}
+function threeStart() {
+    initThree();
+    initCamera();
+    initScene();
+    initLight();
+    initObject();
+    initGrid();
+    animate();
+}
+function animate() {
+    mesh.rotation.x+=0.01;
+    requestAnimationFrame(animate);
+    renderer.render(scene,camera)
+}
+</script>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three框架-透视</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/build/tween.umd.js"></script>
+    <script src="/examples/js/loaders/OBJLoader.js"></script>
+    <script src="/examples/js/loaders/MTLLoader.js"></script>
+
+    <style type="text/css">
+        body{
+            color: #fff;
+            font-family: Monospace;
+            font-size: 13px;
+            text-align: center;
+            font-weight: bold;
+            background: #000;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info{
+            color: #fff;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 5px;
+        }
+        a{
+            color: red;
+        }
+
+    </style>
+</head>
+
+<body>
+<div id="container"></div>
+<div id="info"></div>
+</body>
+<script>
+
+    var SCREEN_HEIGHT=window.innerHeight;
+    var SCREEN_WIDHT=window.innerWidth;
+    var mouseX=0,mouseY=0;
+    var windowHalfX=window.innerWidth/2;
+    var windowHalfY=window.innerHeight/2;
+
+    var container;
+    var camera,scene,renderer,mesh,directionalLight;
+    init();
+    animate();
+    function init(){
+        //创建场景
+        scene=new THREE.Scene();
+        //相机
+        camera=new THREE.PerspectiveCamera(90,SCREEN_WIDHT/SCREEN_HEIGHT,1,2000);
+        camera.position.z=500;
+      //  camera.lookAt(new THREE.Vector3(0,0,0));
+        //材质
+        var geometry=new THREE.BoxGeometry(1,1,1);
+        var material=new THREE.MeshBasicMaterial({
+            color:0xff0000,
+           // wireframe:true
+        })
+        mesh=new THREE.Mesh(geometry,material)
+        scene.add(mesh);
+
+        //模型
+        var mtlLoader=new THREE.MTLLoader();
+        mtlLoader.load('/examples/models/obj/female02/female02.mtl',function (materials) {
+            var objLoader = new THREE.OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.load('/examples/models/obj/female02/female02.obj',function (objcter) {
+                scene.add(objcter)
+            })
+        })
+        //灯光
+        var ambient = new THREE.AmbientLight(0xffffff);
+        scene.add(ambient);
+
+        var dircectionalLight = new THREE.DirectionalLight(0xffffff);
+        dircectionalLight.position.set(0,0,1);
+        scene.add(dircectionalLight);
+        //渲染
+        renderer=new THREE.WebGLRenderer();
+        renderer.setSize(SCREEN_WIDHT,SCREEN_HEIGHT);
+        document.body.appendChild(renderer.domElement)
+        document.addEventListener('mousemove',onDocumentMouseMove,false);
+        window.addEventListener('resize',onWindowResize,false);
+
+        animate();
+    }
+    function onWindowResize() {
+        windowHalfX = window.innerWidth/2;
+        windowHalfY = window.innerHeight/2;
+        camera.aspect =window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth,window.innerHeight);
+    }
+    function onDocumentMouseMove(event) {
+        mouseX = (event.clientX-windowHalfX)/2;
+        mouseY = (event.clientY-windowHalfY)/2;
+    }
+    function animate() {
+        requestAnimationFrame(animate);
+        render();
+    }
+    function render() {
+        camera.position.x +=(mouseX-camera.position.x)*0.5;
+        camera.position.y +=(-mouseY-camera.position.y)*0.5;
+        camera.lookAt(scene.position);
+        renderer.render(scene,camera)
+    }
+
+</script>
+</html>
