@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three框架-透视</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/examples/js/controls/OrbitControls.js"></script>
+    <script src="/build/tween.umd.js"></script>
+    <script src="/examples/js/loaders/OBJLoader.js"></script>
+    <script src="/examples/js/loaders/MTLLoader.js"></script>
+
+    <style type="text/css">
+        body{
+            color: #fff;
+            font-family: Monospace;
+            font-size: 13px;
+            text-align: center;
+            font-weight: bold;
+            background: #000;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info{
+            color: #fff;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 5px;
+        }
+        a{
+            color: red;
+        }
+        .creader{
+            position:absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+        .childrenDiv{
+            color: #ffffff;
+            font-size: 24px;
+
+        }
+    </style>
+</head>
+
+<body>
+<div id="container"></div>
+<div id="info"></div>
+</body>
+<script>
+
+    var SCREEN_HEIGHT=window.innerHeight;
+    var SCREEN_WIDHT=window.innerWidth,mouse,projectiveObj;
+    var mouseX=0,mouseY=0;
+    var windowHalfX=window.innerWidth/2;
+    var windowHalfY=window.innerHeight/2;
+
+    var container,raycaster;
+    var camera,scene,renderer,mesh,directionalLight;
+    init();
+    animate();
+    function init(){
+        //创建场景
+        scene=new THREE.Scene();
+        //相机
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 1, 10000);
+        camera.position.set(3600, 3000, 4500);
+        camera.lookAt(new THREE.Vector3(0,0,0));
+
+        //材质
+
+        //模型
+        var mtlLoader=new THREE.MTLLoader();
+        mtlLoader.load('/examples/models/obj/test/01/ZCPYobj.mtl',function (materials) {
+            var objLoader = new THREE.OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.load('/examples/models/obj/test/01/ZCPYobj.obj',function (object) {
+                 console.log(object)
+                child.castShadow = true;
+                child.receiveShadow = true;
+                object.traverse(function (child) {
+
+                    if(child instanceof THREE.Mesh){
+                       // console.log(child)
+
+                    }
+                    if(child instanceof THREE.Light){
+                        // console.log(child)
+                       var childLight=child.copy();
+                       scene.add(childLight)
+                    }
+                })
+                object.scale.set(0.1,0.1,0.1);
+
+                scene.add(object)
+            })
+        })
+
+
+        //渲染
+
+        renderer=new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(SCREEN_WIDHT,SCREEN_HEIGHT);
+        renderer.setClearColor(0xcecece)
+
+        document.body.appendChild(renderer.domElement)
+        document.addEventListener('mousemove',onDocumentMouseMove,false);
+        window.addEventListener('resize',onWindowResize,false);
+
+        window.addEventListener( 'click', onMouseClick, false );
+
+
+        var controls = new THREE.OrbitControls( camera, renderer.domElement );
+        controls.enablePan = false;
+        animate();
+        //告诉渲染器需要阴影效果
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 默认的是，没有设置的这个清晰 THREE.PCFShadowMap
+
+        //灯光
+        scene.add(new THREE.AmbientLightProbe(0xe6e6e6));
+        //点光源
+        var light = new THREE.PointLight( 0xfffa00, 1,5000 );
+        light.position.set( -300, 500, 500 );
+        light.castShadow = true;
+       // scene.add( light );
+        var helper = new THREE.PointLightHelper( light, 50 );
+
+      //  scene.add( helper );
+        //聚光灯
+        const spotLight = new THREE.SpotLight( 0xffffff );
+        spotLight.position.set( -100,400, 1500)
+
+        spotLight.castShadow = true;
+
+       spotLight.shadow.mapSize.width = 1024;
+       spotLight.shadow.mapSize.height = 1024;
+
+       spotLight.shadow.camera.near = 50;
+        spotLight.shadow.camera.far = 40;
+       spotLight.shadow.camera.fov = 300;
+
+     //   scene.add( spotLight );
+
+        const spotLightHelper = new THREE.SpotLightHelper( spotLight );
+       // scene.add( spotLightHelper );
+        //平行光
+        const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        directionalLight.position.set( 0,300, 1000)
+       // scene.add( directionalLight );
+        const directionalLighthelper = new THREE.DirectionalLightHelper( directionalLight, 5 );
+       // scene.add( directionalLighthelper );
+        //辅助工具
+        var size = 2000;
+        var divisions = 100;
+
+        var gridHelper = new THREE.GridHelper( size, divisions );
+        //scene.add( gridHelper );
+
+    }
+    function onMouseClick( event ) {
+
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+
+        //通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+        raycaster.setFromCamera( mouse, camera );
+
+        // 获取raycaster直线和所有模型相交的数组集合
+        var intersects = raycaster.intersectObjects( scene.children, true );
+        console.log(intersects);
+
+        if(intersects.length>1) {
+
+            if("shexiangji3"===intersects[ 0 ].object.name){
+                console.log(intersects[0].object.name);
+                creader()
+            }
+            let Mname = intersects[ 0 ].object.name;
+
+
+            //将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+            for ( var i = 0; i < intersects.length; i++ ) {
+
+                // console.log(intersects[ i ]);
+                // intersects[ i ].object.material.color.set( 0xff0000 );
+                // intersects[ 0 ].object.material.color.set( 0xff0000 );
+
+                // console.log(intersects[ 0 ].object.name)
+                console.log(intersects[ 0 ].object.uuid)
+                // console.log(intersects[ 0 ].object)
+
+
+            }
+        }
+
+
+    }
+
+    function onWindowResize() {
+        windowHalfX = window.innerWidth/2;
+        windowHalfY = window.innerHeight/2;
+        camera.aspect =window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth,window.innerHeight);
+    }
+    function onDocumentMouseMove(event) {
+      //  console.log(event)
+        mouseX = (event.clientX-windowHalfX)/2;
+        mouseY = (event.clientY-windowHalfY)/2;
+
+    }
+
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        render();
+    }
+    function render() {
+        // camera.position.x +=(mouseX-camera.position.x)*0.5;
+        // camera.position.y +=(-mouseY-camera.position.y)*0.5;
+        // camera.lookAt(scene.position);
+        renderer.render(scene,camera)
+
+    }
+    function creader() {
+        var creadetDiv=document.createElement('div');
+        var childrenDiv=document.createElement('div');
+        childrenDiv.className='childrenDiv';
+        childrenDiv.innerHTML='<video class="" autoplay="" tabindex="2" mediatype="video" src="https://www.w3school.com.cn/i/movie.ogg" ></video>'
+        creadetDiv.appendChild(childrenDiv)
+        creadetDiv.className='creader'
+       document.body.appendChild(creadetDiv)
+    }
+</script>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/examples/js/libs/dat.gui.min.js"></script>
+    <script src="/examples/js/libs/inflate.min.js"></script>
+    <script src="/examples/js/controls/OrbitControls.js"></script>
+    <script src="/build/tween.umd.js"></script>
+    <script src="/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="/examples/js/loaders/RGBELoader.js"></script>
+</head>
+<body>
+<script>	var container, controls,light;
+var camera, scene, renderer;
+
+init();
+render();
+
+function init() {
+
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
+
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+    camera.position.set( - 1.8, 0.6, 2.7 );
+
+    scene = new THREE.Scene();
+    //立方体
+    var cubeGeometry = new THREE.CubeGeometry(1,1,1);
+    var cubeMaterial = new THREE.MeshLambertMaterial({color:0x00ffff});
+
+    var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.x = -1;
+    cube.position.y = 0;
+    cube.position.z =0;
+
+    //告诉立方体需要投射阴影
+    cube.castShadow = true;
+    light = new THREE.AmbientLight(0xffffff);   // 环境光源颜色
+   // scene.add(light);//光源添加到场景中
+
+   // scene.add(cube);
+    new THREE.RGBELoader()
+        .setDataType( THREE.UnsignedByteType )
+        .setPath( '/examples/textures/equirectangular/' )
+        .load( 'royal_esplanade_1k.hdr', function ( texture ) {
+
+            var envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+
+            scene.background = envMap;
+            scene.environment = envMap;
+
+            texture.dispose();
+            pmremGenerator.dispose();
+
+            render();
+
+            // model
+
+            // use of RoughnessMipmapper is optional
+         //   var roughnessMipmapper = new THREE.RoughnessMipmapper( renderer );
+
+            var loader = new THREE.GLTFLoader().setPath( '/examples/models/gltf/test/' );
+            loader.load( 'gltf03.gltf', function ( gltf ) {
+                console.log(gltf.scene)
+
+                gltf.scene.traverse( function ( child ) {
+                    console.log(child)
+                    // child.castShadow = true;
+                    // child.receiveShadow = true;
+                    if ( child.isMesh ) {
+
+                        // TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
+                        // roughnessMipmapper.generateMipmaps( child.material );
+
+                    }
+
+                } );
+                gltf.scene.scale.set(2,2,2)
+                scene.add( gltf.scene );
+
+             //   roughnessMipmapper.dispose();
+
+                render();
+
+            } );
+
+        } );
+    var axis = new THREE.AxisHelper(3); // 3表示轴的长度
+    scene.add(axis);
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild( renderer.domElement );
+
+    var pmremGenerator = new THREE.PMREMGenerator( renderer );
+    pmremGenerator.compileEquirectangularShader();
+
+    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls.addEventListener( 'change', render ); // use if there is no animation loop
+    controls.minDistance = 2;
+    controls.maxDistance = 10;
+    controls.target.set( 0, 0, - 0.2 );
+    controls.update();
+
+    window.addEventListener( 'resize', onWindowResize, false );
+ //   render();
+}
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    render();
+
+}
+
+//
+function render() {
+  //  camera.lookAt=scene.position
+    renderer.render( scene, camera );
+
+}
+</script>
+</body>
+</html>

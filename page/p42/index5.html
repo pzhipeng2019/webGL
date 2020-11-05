@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three框架-透视</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/examples/js/libs/dat.gui.min.js"></script>
+    <script src="/examples/js/libs/inflate.min.js"></script>
+    <script src="/examples/js/controls/OrbitControls.js"></script>
+    <script src="/build/tween.umd.js"></script>
+    <script src="/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="/examples/js/loaders/RGBELoader.js"></script>
+    <style type="text/css">
+        body{
+            color: #fff;
+            font-family: Monospace;
+            font-size: 13px;
+            text-align: center;
+            font-weight: bold;
+            background: #000;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info{
+            color: #fff;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 5px;
+        }
+        a{
+            color: red;
+        }
+
+    </style>
+</head>
+
+<body>
+<div id="container"></div>
+<div id="info"></div>
+</body>
+
+<script>
+
+    let scene, camera, renderer, controls, guiControls,spotLight;
+    let stats = initStats();
+
+    /* 场景 */
+    function initScene() {
+
+        scene = new THREE.Scene();
+
+    }
+
+    /* 相机 */
+    function initCamera() {
+
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+        camera.position.set( - 1.8, 0.6, 2.7 );
+
+
+    }
+
+    /* 渲染器 */
+    function initRender() {
+        // var cubeGeometry = new THREE.CubeGeometry(1,1,1);
+        // var cubeMaterial = new THREE.MeshLambertMaterial({color:0x00ffff});
+        //
+        // var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        // cube.position.x = 1;
+        // cube.position.y = 0;
+        // cube.position.z = 0;
+        //
+        // //告诉立方体需要投射阴影
+        // cube.castShadow = true;
+
+
+       // scene.add(cube);
+
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x0E3866);
+        document.body.appendChild(renderer.domElement);
+
+    }
+
+    /* 灯光 */
+    function initLight() {
+
+        var ambientLight=new THREE.AmbientLight(0xffffff);
+        //ambientLight.position.set( 0.3,0.5,-0.3 );
+     //   scene.add(ambientLight);
+      spotLight = new THREE.SpotLight( 0xffffff );
+        spotLight.position.set( 1, 1, 1 );
+
+        spotLight.castShadow = true;
+
+        spotLight.shadow.mapSize.width = 10;
+        spotLight.shadow.mapSize.height = 10;
+
+        spotLight.shadow.camera.near = 50;
+        spotLight.shadow.camera.far = 400;
+        spotLight.shadow.camera.fov = 3;
+
+        scene.add( spotLight );
+
+        var spotLightHelper = new THREE.SpotLightHelper( spotLight );
+        scene.add( spotLightHelper );
+        // light = new THREE.HemisphereLight(0xbbbbff, 0x444422);
+        // light.position.set(0, 11, 0);
+        // scene.add(light);
+    }
+
+    /* 控制器 */
+    function initControls() {
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        /* 属性参数默认 */
+
+    }
+
+    /* 调试插件 */
+    function initGui() {
+
+        guiControls = new function () {
+
+        };
+
+        let controls = new dat.GUI({width: 200});
+
+    }
+
+    /* 场景中的内容 */
+    function initContent() {
+        let loader = new THREE.GLTFLoader();
+        loader.load('/examples/models/gltf/test/gltf03.gltf', (gltf) => {
+            camera.updateProjectionMatrix();
+            gltf.scene.scale.set(2,2,2)
+            scene.add(gltf.scene);
+        });
+    }
+
+    /* 性能插件 */
+    function initStats() {
+
+        let stats = new Stats();
+
+        document.body.appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+    /* 窗口变动触发 */
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+    /* 数据更新 */
+    function update() {
+
+        stats.update();
+
+    }
+
+    /* 初始化 */
+    function init() {
+
+        initScene();
+        initCamera();
+        initRender();
+        initLight();
+        initControls();
+        initContent();
+        initGui();
+
+        /* 监听事件 */
+        window.addEventListener('resize', onWindowResize, false);
+
+    }
+
+    /* 循环渲染 */
+    function animate() {
+      //  camera.lookAt(1,1,1);
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        update();
+
+    }
+    function render() {
+
+        renderer.render( scene, camera );
+
+    }
+    /* 初始加载 */
+    (function () {
+        console.log("three init start...");
+
+        init();
+        animate();
+
+        console.log("three init send...");
+    })();
+
+</script>
+</html>

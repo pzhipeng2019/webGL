@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three框架-透视</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/examples/js/libs/dat.gui.min.js"></script>
+    <script src="/examples/js/libs/inflate.min.js"></script>
+    <script src="/examples/js/controls/OrbitControls.js"></script>
+    <script src="/build/tween.umd.js"></script>
+    <script src="/examples/js/loaders/RGBELoader.js"></script>
+    <script src="/examples/js/loaders/GLTFLoader.js"></script>
+
+    <style type="text/css">
+        body{
+            color: #fff;
+            font-family: Monospace;
+            font-size: 13px;
+            text-align: center;
+            font-weight: bold;
+            background: #000;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info{
+            color: #fff;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            padding: 5px;
+        }
+        a{
+            color: red;
+        }
+
+    </style>
+</head>
+
+<body>
+<div id="container"></div>
+<div id="info"></div>
+</body>
+
+<script>
+    /*场景*/
+    var scene = new THREE.Scene(),controls;
+    /*摄像机*/
+    var camera= new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,1,1000)
+    camera.position.set( - 1.8, 3, 4 );
+
+    /*渲染*/
+    var renderer=new THREE.WebGLRenderer();//创建网格模型
+    renderer.setClearColor(0x696969);//设置场景颜色
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    renderer.shadowMap.enabled = true;
+    var geometry = new THREE.CubeGeometry(2,2,2);//创建立方体
+    var material = new THREE.MeshBasicMaterial(//材质
+        {
+            color:0xff0000 //立方体颜色
+        }
+    )
+    var cube =new THREE.Mesh(geometry,material);
+
+   // scene.add(cube);
+  //  camera.position.z=5;
+    let loader = new THREE.GLTFLoader();
+    loader.load('/examples/models/gltf/test/gltf04.gltf', (gltf) => {
+        gltf.scene.traverse( function ( child ) {
+            console.log(child)
+
+            if ( child.isMesh ) {
+                //child.castShadow = true;
+               // child.receiveShadow = true;
+                // TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
+                // roughnessMipmapper.generateMipmaps( child.material );
+
+            }
+            if(child instanceof THREE.Object3D){
+                child.castShadow = true;
+                child.receiveShadow = true;
+                // var spotLight=new THREE.SpotLight(0xffffff);
+                //
+                // spotLight.position.set(child.position.x,child.position.y,child.position.z);
+                // console.log(child)
+                // scene.add(child);
+            }
+        } );
+        camera.updateProjectionMatrix();
+        gltf.scene.scale.set(2,2,2)
+        scene.add(gltf.scene);
+    });
+    function render() {
+        // cube.rotation.x +=0.01;
+        // cube.rotation.y +=0.01;
+        requestAnimationFrame(render)
+        renderer.render(scene,camera)
+    }
+    render();
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+</script>
+</html>

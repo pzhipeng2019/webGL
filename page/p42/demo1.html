@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+        }
+
+    </style>
+</head>
+<body onload="OnLoad();">
+<div id="WebGL-output"></div>
+</body>
+<script src="/build/three.js"></script>
+<script src="/examples/js/libs/stats.min.js"></script>
+<script src="/examples/js/controls/OrbitControls.js"></script>
+<script src="/examples/js/controls/TrackballControls.js"></script>
+<script src="/examples/js/loaders/OBJLoader.js"></script>
+<script src="/examples/js/loaders/MTLLoader.js"></script>
+<script>
+    // 1、
+    var renderer;
+    function initRender () {
+        renderer = new THREE.WebGLRenderer();           //渲染器构建
+        renderer.setClearColor('#6A993E');			        // 背景色	// renderer.setClearColor(0xEEEEEE);
+        renderer.setSize(window.innerWidth , window.innerHeight);
+    }
+
+
+    // 2、
+    var camera;
+
+    function initCamera () {
+        camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);		//相机构建
+        camera.position.x = -30;		//渲染视图视角
+        camera.position.y = 20;
+        camera.position.z = 30;
+    }
+
+
+
+    // 3、
+    var scene;
+    var axes;
+    function initScene () {
+        scene = new THREE.Scene();		        //场景构建
+        axes = new THREE.AxisHelper(20);		//构建一个坐标轴
+        scene.add(axes);
+    }
+
+
+
+    // 4、
+    //添加材质灯光阴影  -- 必要
+    var spotLight;
+    var light;
+    function initLight () {
+        spotLight = new THREE.SpotLight('#FFFFFF');     // 聚光灯  可以不要
+        spotLight.position.set(-20,20,10);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        light = new THREE.AmbientLight(0xffffff, .3);   // 环境光源颜色
+        light.position.set(30, 30, 0);//光源位置
+        scene.add(light);//光源添加到场景中
+
+        camera.lookAt(scene.position)
+    }
+
+
+    // 5、设置物体object
+    //创建控件并绑定在相机上
+    function initControls () {
+        trackballControls = new THREE.TrackballControls(camera,renderer.domElement);
+        trackballControls.rotateSpeed = 1.0;
+        trackballControls.zoomSpeed = 1.0;
+        trackballControls.panSpeed = 1.0;
+        trackballControls.noZoom = false;
+        trackballControls.noPan = false;
+        trackballControls.staticMoving = true;
+        trackballControls.dynamicDampingFactor = 0.3;
+    }
+
+
+
+
+    // model
+    var mtlLoader;
+    var objLoader;
+    var Obj;
+    function initModel () {
+        var onProgress = function(xhr) {
+            if (xhr.lengthComputable) {
+                var percentComplete = xhr.loaded / xhr.total * 100;
+            }
+        };
+        var onError = function(xhr) {
+            // console.log(xhr)
+        };
+
+        mtlLoader = new THREE.MTLLoader();
+        // 模型1
+        // mtlLoader.setBaseUrl('news/');					    // obj mtl文件的路径 objLoader.setMaterials( materials )
+       // mtlLoader.setPath('model/');							// obj mtl文件的目录
+        mtlLoader.load('/examples/models/obj/test/ceshi2/ceshi1.mtl', function(materials) {
+            materials.preload();
+            objLoader = new THREE.OBJLoader();
+            objLoader.setMaterials(materials);
+            //objLoader.setPath('model/');
+            objLoader.load('/examples/models/obj/test/ceshi2/ceshi1.obj', function(object) {
+                object.position.x = 0;
+                object.position.y = -25;
+                object.position.z = -10;
+                // object.rotation.y = 0;
+                object.scale.set(.15, .15, .15);		        // 长 高 宽 比例
+                Obj = object;
+                scene.add(object);
+            }, onProgress, onError);
+        });
+    }
+
+
+
+    var raycaster;
+    var mouse;
+
+    function onMouseClick( event ) {
+
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+
+        //通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+        raycaster.setFromCamera( mouse, camera );
+
+        // 获取raycaster直线和所有模型相交的数组集合
+        var intersects = raycaster.intersectObjects( scene.children, true );
+        console.log(intersects);
+
+        if(intersects.length>1) {
+            console.log(intersects[ 0 ].object.name);
+            let Mname = intersects[ 0 ].object.name;
+            if (Mname == 'Mesh87 ___23_2 Model') {          // 右侧控制室的空调
+                $(".ac-right-01").show();
+            }
+
+            //将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+            for ( var i = 0; i < intersects.length; i++ ) {
+
+                // console.log(intersects[ i ]);
+                // intersects[ i ].object.material.color.set( 0xff0000 );
+                // intersects[ 0 ].object.material.color.set( 0xff0000 );
+
+                // console.log(intersects[ 0 ].object.name)
+                console.log(intersects[ 0 ].object.uuid)
+                // console.log(intersects[ 0 ].object)
+
+
+            }
+        }
+
+
+    }
+
+
+    function renderScene(){
+        var clock = new THREE.Clock();
+        var delta = clock.getDelta();
+        trackballControls.update(delta);
+        requestAnimationFrame(renderScene);
+        renderer.render(scene,camera);
+    }
+
+    //
+    function OnLoad() {
+        initRender();
+        initCamera();
+        initScene();
+        initLight();
+        initControls();
+        initModel();
+        window.addEventListener( 'click', onMouseClick, false );
+        document.getElementById("WebGL-output").appendChild(renderer.domElement);
+        renderScene();
+    }
+
+    window.onresize = function () {
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+        renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+        camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+        camera.updateProjectionMatrix();
+        cameraCube.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+        cameraCube.updateProjectionMatrix();
+    }
+
+</script>
+</html>

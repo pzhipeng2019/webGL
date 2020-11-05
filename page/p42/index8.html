@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/build/three.js"></script>
+    <script src="/examples/js/libs/stats.min.js"></script>
+    <script src="/examples/js/libs/dat.gui.min.js"></script>
+    <script src="/examples/js/libs/inflate.min.js"></script>
+    <script src="/examples/js/controls/OrbitControls.js"></script>
+    <script src="/build/tween.umd.js"></script>
+    <script src="/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="/examples/js/loaders/RGBELoader.js"></script>
+    <style>
+        .creader{
+            position:absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+        .childrenDiv{
+            color: #ffffff;
+            font-size: 24px;
+
+        }
+    </style>
+</head>
+<body>
+<script>	var container, controls,light,mouse,raycaster;
+var camera, scene, renderer;
+
+init();
+render();
+
+function init() {
+
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
+
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+    camera.position.set( - 1.8, 0.6, 2.7 );
+
+    scene = new THREE.Scene();
+
+    light = new THREE.AmbientLight(0xffffff);   // 环境光源颜色
+    scene.add(light);//光源添加到场景中
+
+    var loader = new THREE.GLTFLoader().setPath( '/examples/models/gltf/test/' );
+    loader.load( 'ZCPYgltf4.gltf', function ( gltf ) {
+        console.log(gltf.scene)
+
+        gltf.scene.traverse( function ( child ) {
+           // console.log(child)
+
+            if ( child.isMesh ) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                // TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
+                // roughnessMipmapper.generateMipmaps( child.material );
+
+            }
+
+        } );
+        gltf.scene.scale.set(0.1,0.1,0.1)
+        scene.add( gltf.scene );
+
+        //   roughnessMipmapper.dispose();
+
+        render();
+
+    } );
+    var axis = new THREE.AxisHelper(3); // 3表示轴的长度
+    scene.add(axis);
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setClearColor(0xcecece);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild( renderer.domElement );
+    //告诉渲染器需要阴影效果
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 默认的是，没有设置的这个清晰 THREE.PCFShadowMap
+    var pmremGenerator = new THREE.PMREMGenerator( renderer );
+    pmremGenerator.compileEquirectangularShader();
+
+    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls.addEventListener( 'change', render ); // use if there is no animation loop
+    controls.minDistance = 2;
+    controls.maxDistance = 10;
+    controls.target.set( 0, 0, - 0.2 );
+    controls.update();
+
+    window.addEventListener( 'resize', onWindowResize, false );
+
+
+    //聚光灯
+    const spotLight = new THREE.SpotLight( 0xffffff );
+    spotLight.position.set( -100,400, 1500)
+
+    spotLight.castShadow = true;
+
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+
+    spotLight.shadow.camera.near = 50;
+    spotLight.shadow.camera.far = 40;
+    spotLight.shadow.camera.fov = 300;
+
+     //  scene.add( spotLight );
+
+    const spotLightHelper = new THREE.SpotLightHelper( spotLight );
+     scene.add( spotLightHelper );
+    window.addEventListener( 'click', onMouseClick, false );
+ //   render();
+}
+
+function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    render();
+
+}
+function onMouseClick( event ) {
+
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    //通过鼠标点击的位置计算出raycaster所需要的点的位置，以屏幕中心为原点，值的范围为-1到1.
+
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+    // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+    raycaster.setFromCamera( mouse, camera );
+
+    // 获取raycaster直线和所有模型相交的数组集合
+    var intersects = raycaster.intersectObjects( scene.children, true );
+
+    console.log(intersects[1].object);
+
+    if(intersects.length>1) {
+
+        if("shexiangji3"===intersects[ 0 ].object.name){
+            console.log(intersects[0].object.name);
+            creader()
+        }
+        let Mname = intersects[ 0 ].object.name;
+
+
+        //将所有的相交的模型的颜色设置为红色，如果只需要将第一个触发事件，那就数组的第一个模型改变颜色即可
+        for ( var i = 0; i < intersects.length; i++ ) {
+
+            // console.log(intersects[ i ]);
+            // intersects[ i ].object.material.color.set( 0xff0000 );
+            // intersects[ 0 ].object.material.color.set( 0xff0000 );
+
+            // console.log(intersects[ 0 ].object.name)
+            console.log(intersects[ 0 ].object.uuid)
+            // console.log(intersects[ 0 ].object)
+
+
+        }
+    }
+
+
+}
+
+//
+function render() {
+  //  camera.lookAt=scene.position
+    renderer.render( scene, camera );
+
+}
+function creader() {
+    var creadetDiv=document.createElement('div');
+    var childrenDiv=document.createElement('div');
+    childrenDiv.className='childrenDiv';
+    childrenDiv.innerHTML='<video class="" autoplay="" tabindex="2" mediatype="video" src="https://www.w3school.com.cn/i/movie.ogg" ></video>'
+    creadetDiv.appendChild(childrenDiv)
+    creadetDiv.className='creader'
+    document.body.appendChild(creadetDiv)
+}
+</script>
+</body>
+</html>
